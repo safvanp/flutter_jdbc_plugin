@@ -27,11 +27,15 @@ abstract class FlutterJdbcPluginPlatform extends PlatformInterface {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 
-  Future<bool?> connectMssql(String host,String database,String username,String password,String port) {
-    throw UnimplementedError('connectMssql() has not been implemented.');
+  Future<bool?> connectServer(String server,String database,String username,String password,String port) {
+    throw UnimplementedError('connectServer() has not been implemented.');
   }
 
-  Future<dynamic> selectMssqlQuery(String host,String database,String username,String password,String port,query) {
-    throw UnimplementedError('selectMssqlQuery() has not been implemented.');
+  Future<dynamic> selectQuery(String server,String database,String username,String password,String port,query) {
+    throw UnimplementedError('selectQuery() has not been implemented.');
+  }
+
+  Future<dynamic> executeQuery(String server,String database,String username,String password,String port,query) {
+    throw UnimplementedError('executeQuery() has not been implemented.');
   }
 }

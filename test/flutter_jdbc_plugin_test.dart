@@ -16,6 +16,12 @@ class MockFlutterJdbcPluginPlatform
     // TODO: implement connectMssql
     throw UnimplementedError();
   }
+
+  @override
+  Future selectMssqlQuery(String host, String database, String username, String password, String port, query) {
+    // TODO: implement selectMssqlQuery
+    throw UnimplementedError();
+  }
 }
 
 void main() {

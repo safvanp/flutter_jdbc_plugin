@@ -63,75 +63,138 @@ class _MyAppState extends State<MyApp> {
               Text('Running on: $_platformVersion\n'),
               Card(elevation: 10,
                 child: TextButton(onPressed: () => setState(() {
-                  isLoading=true;
-                }), child: const Text('Connect Mssql')),
+                  isConnecting=true;
+                }), child: const Text('Connect server')),
+              ),
+              Card(elevation: 10,
+                child: TextButton(onPressed: () => setState(() {
+                  isExecuteQuery=true;
+                }), child: const Text('Add student data')),
               ),
               Card(
                 elevation: 10,
                 child: TextButton(onPressed: () => setState(() {
-                  isLoading1=true;
-                }), child: const Text('Select data Mssql')),
+                  isSelectQuery=true;
+                }), child: const Text('Select student data')),
               ),
-              isLoading?FutureBuilder(
-                future: connectMssql(),
+              isConnecting?FutureBuilder(
+                future: connectServer(),
                 builder: (context, snapshot) {
-                if(snapshot.hasData){
-                  if(snapshot.data.toString().isNotEmpty){
-                    return const Text('Mssql connected');
-                  }else {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const <Widget>[
-                          SizedBox(height: 20),
-                          Text('Mssql connection fail')
-                        ],
+                  if(snapshot.hasData){
+                    if(snapshot.data.toString().isNotEmpty){
+                      return const Text('Mssql connected');
+                    }else {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const <Widget>[
+                            SizedBox(height: 20),
+                            Text('Mssql connection fail')
+                          ],
+                        ),
+                      );
+                    }
+                  } else if (snapshot.hasError) {
+                    return AlertDialog(
+                      title: const Text(
+                        'An Error Occurred!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.redAccent,
+                        ),
                       ),
+                      content: Text(
+                        "${snapshot.error}",
+                        style: const TextStyle(
+                          color: Colors.blueAccent,
+                        ),
+                      ),
+                      actions: <Widget>[
+                        TextButton(
+                          child: const Text(
+                            'Go Back',
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                        )
+                      ],
                     );
                   }
-                } else if (snapshot.hasError) {
-                  return AlertDialog(
-                    title: const Text(
-                      'An Error Occurred!',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.redAccent,
-                      ),
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const <Widget>[
+                        CircularProgressIndicator(),
+                        SizedBox(height: 20),
+                        Text('This may take some time..')
+                      ],
                     ),
-                    content: Text(
-                      "${snapshot.error}",
-                      style: const TextStyle(
-                        color: Colors.blueAccent,
-                      ),
-                    ),
-                    actions: <Widget>[
-                      TextButton(
-                        child: const Text(
-                          'Go Back',
-                          style: TextStyle(
-                            color: Colors.redAccent,
-                          ),
-                        ),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                      )
-                    ],
                   );
-                }
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const <Widget>[
-                      CircularProgressIndicator(),
-                      SizedBox(height: 20),
-                      Text('This may take some time..')
-                    ],
-                  ),
-                );
-              },):const Text(''),
-              isLoading1?FutureBuilder(
-                future: sqlExecute(),
+                },):const Text(''),
+              isExecuteQuery?FutureBuilder(
+                future: executeQuery(),
+                builder: (context, snapshot) {
+                  if(snapshot.hasData){
+                    if(snapshot.data.toString().isNotEmpty){
+                      return const Text('Student data added');
+                    }else {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const <Widget>[
+                            SizedBox(height: 20),
+                            Text('Server connection fail')
+                          ],
+                        ),
+                      );
+                    }
+                  } else if (snapshot.hasError) {
+                    return AlertDialog(
+                      title: const Text(
+                        'An Error Occurred!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.redAccent,
+                        ),
+                      ),
+                      content: Text(
+                        "${snapshot.error}",
+                        style: const TextStyle(
+                          color: Colors.blueAccent,
+                        ),
+                      ),
+                      actions: <Widget>[
+                        TextButton(
+                          child: const Text(
+                            'Go Back',
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                        )
+                      ],
+                    );
+                  }
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const <Widget>[
+                        CircularProgressIndicator(),
+                        SizedBox(height: 20),
+                        Text('This may take some time..')
+                      ],
+                    ),
+                  );
+                },):const Text(''),
+              isSelectQuery?FutureBuilder(
+                future: selectQuery(),
                 builder: (context, snapshot) {
                   if(snapshot.hasData){
                     if(snapshot.data.toString().isNotEmpty){
@@ -140,8 +203,8 @@ class _MyAppState extends State<MyApp> {
                         child: ListView.builder(scrollDirection: Axis.vertical,itemCount: data.length,itemBuilder: (context, index) {
                           Map<Object?,Object?> map = data.elementAt(index) as Map<Object?,Object?>;
                           return ListTile(
-                            title: Text(map["ItemName"].toString()),
-                            subtitle: Text(map["Qty"].toString()),
+                            title: Text(map["name"].toString()),
+                            subtitle: Text(map["mark"].toString()),
                           );
                         }),
                       );
@@ -204,18 +267,29 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  bool isLoading=false;
-  bool isLoading1=false;
-  var host='192.168.100.102', database='RUBY', username='sa', password='sqlr2', port='1433';
+  bool isConnecting=false;
+  bool isSelectQuery=false;
+  bool isExecuteQuery=false;
+  var server='192.168.100.102', database='myDataBase', username='sa', password='sqlr2', port='1433';
 
-  connectMssql() async {
-    bool status = await _flutterJdbcPlugin.connectMssql(host,database,username,password,port)??false;
+  connectServer() async {
+    bool status = await _flutterJdbcPlugin.connectServer(server,database,username,password,port)??false;
     return status;
   }
 
-  sqlExecute() async {
-    var query = "select * from Stock";
-    var data = await _flutterJdbcPlugin.selectMssqlQuery(host, database, username, password, port,query)??[];
+  selectQuery() async {
+    var query = "select * from Students";
+    var data = await _flutterJdbcPlugin.selectQuery(server, database, username, password, port,query)??[];
     return data;
+  }
+
+  int count =1;
+  int mark=80;
+  executeQuery() async {
+    var query = "INSERT INTO Students(name,mark) values ('NAME$count','$mark')";
+    count++;
+    mark++;
+    bool status = await _flutterJdbcPlugin.executeQuery(server,database,username,password,port,query)??false;
+    return status;
   }
 }

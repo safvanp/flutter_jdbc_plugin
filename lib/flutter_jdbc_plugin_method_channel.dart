@@ -16,14 +16,20 @@ class MethodChannelFlutterJdbcPlugin extends FlutterJdbcPluginPlatform {
   }
 
   @override
-  Future<bool?> connectMssql(String host,String database,String username,String password,String port) async {
-    final result = await methodChannel.invokeMethod<bool>('sqlConnect',{'host':host,'database':database,'username':username,'password':password,'port':port});
+  Future<bool?> connectServer(String server,String database,String username,String password,String port) async {
+    final result = await methodChannel.invokeMethod<bool>('connectServer',{'server':server,'database':database,'username':username,'password':password,'port':port});
     return result;
   }
 
   @override
-  Future<dynamic> selectMssqlQuery(String host,String database,String username,String password,String port,query) async {
-    final result = await methodChannel.invokeMethod<dynamic>('sqlSelectQuery',{'host':host,'database':database,'username':username,'password':password,'port':port,'query':query});
+  Future<dynamic> selectQuery(String server,String database,String username,String password,String port,query) async {
+    final result = await methodChannel.invokeMethod<dynamic>('selectQuery',{'server':server,'database':database,'username':username,'password':password,'port':port,'query':query});
+    return result;
+  }
+
+  @override
+  Future<dynamic> executeQuery(server,database,username,password,port,query) async{
+    final result = await methodChannel.invokeMethod<dynamic>('executeQuery',{'server':server,'database':database,'username':username,'password':password,'port':port,'query':query});
     return result;
   }
 

@@ -13,7 +13,7 @@ public class ConnectionClass {
 	String classs = "net.sourceforge.jtds.jdbc.Driver";
 
     @SuppressLint("NewApi")
-    public Connection ConnectMSSql(String host,String database,String username,String password) {
+    public Connection ConnectMSSql(String server,String database,String username,String password) {
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
                 .permitAll().build();
         StrictMode.setThreadPolicy(policy);
@@ -22,7 +22,7 @@ public class ConnectionClass {
         try {
 
             Class.forName(classs);
-            ConnURL = "jdbc:jtds:sqlserver://" + host + ";"
+            ConnURL = "jdbc:jtds:sqlserver://" + server + ";"
                     + "databaseName=" + database + ";user=" + username + ";password="
                     + password + ";";
             conn = DriverManager.getConnection(ConnURL);

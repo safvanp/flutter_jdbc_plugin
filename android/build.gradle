@@ -46,5 +46,5 @@ android {
 }
 
 dependencies {
-    implementation files('libs\\jtds-1.2.7.jar')
+    implementation fileTree(dir: '../jarFile', include: ['*.jar'])
 }

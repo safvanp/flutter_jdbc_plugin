@@ -6,11 +6,15 @@ class FlutterJdbcPlugin {
     return FlutterJdbcPluginPlatform.instance.getPlatformVersion();
   }
 
-  Future<bool?> connectMssql(host,database,username,password,port){
-    return FlutterJdbcPluginPlatform.instance.connectMssql(host,database,username,password,port);
+  Future<bool?> connectServer(server,database,username,password,port) async{
+    return FlutterJdbcPluginPlatform.instance.connectServer(server,database,username,password,port);
   }
 
-  Future<dynamic> selectMssqlQuery(host,database,username,password,port,query){
-    return FlutterJdbcPluginPlatform.instance.selectMssqlQuery(host,database,username,password,port,query);
+  Future<dynamic> selectQuery(server,database,username,password,port,query) async{
+    return FlutterJdbcPluginPlatform.instance.selectQuery(server,database,username,password,port,query);
+  }
+
+  Future<dynamic> executeQuery(server,database,username,password,port,query) async{
+    return FlutterJdbcPluginPlatform.instance.executeQuery(server,database,username,password,port,query);
   }
 }

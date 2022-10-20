@@ -3,7 +3,7 @@
 
     <uses-permission android:name="android.permission.INTERNET"/>
 
-   <application
+0   <application
         android:label="flutter_jdbc_plugin_example"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
