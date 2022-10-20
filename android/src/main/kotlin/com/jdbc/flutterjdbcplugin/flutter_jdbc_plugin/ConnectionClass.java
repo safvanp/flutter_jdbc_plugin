@@ -1,4 +1,4 @@
-package com.shersoft.ssscanner;
+package com.jdbc.flutterjdbcplugin.flutter_jdbc_plugin;
 
 import android.annotation.SuppressLint;
 import android.os.StrictMode;

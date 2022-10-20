@@ -6,9 +6,10 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-import java.sql.Connection
-import java.sql.ResultSet
-import java.sql.ResultSetMetaData
+import kotlinx.coroutines.*
+import org.json.JSONArray
+import org.json.JSONObject
+import java.sql.*
 
 /** FlutterJdbcPlugin */
 class FlutterJdbcPlugin: FlutterPlugin, MethodCallHandler {
@@ -46,19 +47,19 @@ class FlutterJdbcPlugin: FlutterPlugin, MethodCallHandler {
     }
   }
 
-  var connectionClass: ConnectionClass? = null
-  var connection: Connection? = null
-
   private fun connectServer(server:String, database:String,  username:String, password:String,  port:String,result:Result) {
     if(isConUrl(server,database,username,password)) {
+      var connection: Connection? = null
       try {
-        connectionClass = ConnectionClass()
-        connection = connectionClass!!.ConnectMSSql("$server:$port", database, username, password)
-        if (connection != null) {
-//          result.error("mssql","Failed to connection server",null)
-          result.success(false)
-        } else {
-          result.success(true)
+        val conString =
+          "jdbc:jtds:sqlserver://$server:$port;databaseName=$database;user=$username;password=$password;"
+        runBlocking {
+          connection = async { connectDriver(conString) }.await()
+          if (connection != null) {
+            result.success(true)
+          } else {
+            result.success(false)
+          }
         }
       } catch (ex: Exception) {
 //      result.error("error", "error mssql",ex.message)
@@ -83,27 +84,38 @@ class FlutterJdbcPlugin: FlutterPlugin, MethodCallHandler {
 
   private fun selectQuery(server:String, database:String,  username:String, password:String,  port:String,query:String,result:Result) {
     if(isConUrl(server,database,username,password)) {
-      connectionClass = ConnectionClass()
+      var connection: Connection? = null
       try {
-        connection = connectionClass!!.ConnectMSSql("$server:$port", database, username, password)
-        if (connection != null) {
-          var rs: ResultSet
-          val statement = connection!!.prepareStatement(query)
-          rs = statement.executeQuery()
-          val list: MutableList<Map<String, Any>> = ArrayList()
-          var cols: ResultSetMetaData = rs.metaData;
-          while (rs.next()) {
-            val map: MutableMap<String, Any> = HashMap()
-            var j = 0
-            for (i in 1 until cols.columnCount+1) {
-              map[cols.getColumnName(i)] = rs.getString(cols.getColumnName(i))
-            }
-            list.add(map)
-            j++;
+        val conString =
+          "jdbc:jtds:sqlserver://$server:$port;databaseName=$database;user=$username;password=$password;"
+        runBlocking {
+          connection = withContext(Dispatchers.Default) {
+            connectDriver(conString)
           }
-          result.success(list)
-        } else {
-          result.success(false)
+          if (connection != null) {
+            runBlocking {
+              val list: MutableList<Map<String,Any>> = ArrayList()
+              GlobalScope.async {
+                try{
+                  val statement = connection!!.createStatement()
+                  var rs: ResultSet = statement.executeQuery(query)
+                  var metadata: ResultSetMetaData = rs.metaData;
+                  while (rs.next()) {
+                    val map: MutableMap<String,Any> = HashMap()
+                    for (i in 1..metadata.columnCount) {
+                      map[metadata.getColumnName(i)]=rs.getObject(metadata.getColumnName(i))
+                    }
+                    list.add(map)
+                  }
+                }  catch (ex: ClassNotFoundException) {
+                  result.error("class",ex.message,null)
+                }
+              }.await()
+              result.success(list)
+            }
+          } else {
+            result.success(false)
+          }
         }
       } catch (ex: Exception) {
 //      result.error("error", "error mssql",ex.message)
@@ -128,15 +140,23 @@ class FlutterJdbcPlugin: FlutterPlugin, MethodCallHandler {
 
   private fun executeQuery(server:String, database:String,  username:String, password:String,  port:String,query:String,result:Result) {
     if(isConUrl(server,database,username,password)) {
-      connectionClass = ConnectionClass()
+      var connection: Connection? = null
       try {
-        connection = connectionClass!!.ConnectMSSql("$server:$port", database, username, password)
-        if (connection != null) {
-          val statement = connection!!.createStatement()
-          statement.executeUpdate(query)
-          result.success(true)
-        } else {
-          result.success(false)
+        val conString =
+          "jdbc:jtds:sqlserver://$server:$port;databaseName=$database;user=$username;password=$password;"
+        runBlocking {
+          connection = async { connectDriver(conString) }.await()
+          if (connection != null) {
+            val statement = connection!!.createStatement()
+            val ret = statement.executeUpdate(query)
+            if (ret >= 1) {
+              result.success(true)
+            } else {
+              result.success(false)
+            }
+          } else {
+            result.success(false)
+          }
         }
       } catch (ex: Exception) {
 //      result.error("error", "error mssql",ex.message)
@@ -160,16 +180,29 @@ class FlutterJdbcPlugin: FlutterPlugin, MethodCallHandler {
   }
 
   private fun isConUrl(server: String, database: String, username: String, password: String): Boolean {
-    if (server == null || server.trim() == "") {
+    if (server == null || server.trim() == ""||database == null || database.trim() == ""||username == null || username.trim() == ""||password == null) {
       return false
-    } else if (database == null || database.trim() == "") {
-      return false
-    } else if (username == null || database.trim() == "") {
-      return false
-    } else if (password == null) {
-      return false
+    } else {
+      return try {
+          val className = "net.sourceforge.jtds.jdbc.Driver"
+          Class.forName(className).newInstance()
+        true
+      } catch (ex: ClassNotFoundException) {
+          println("catch : $ex");
+        false
+      }
     }
     return  true
+  }
+
+  private suspend fun connectDriver(
+    jdbcConnectionString: String
+  ): Connection? {
+    return GlobalScope.async {
+      return@async DriverManager.getConnection(
+        jdbcConnectionString
+      )
+    }.await();
   }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {

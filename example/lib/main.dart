@@ -82,7 +82,8 @@ class _MyAppState extends State<MyApp> {
                 builder: (context, snapshot) {
                   if(snapshot.hasData){
                     if(snapshot.data.toString().isNotEmpty){
-                      return const Text('Mssql connected');
+                      bool status = snapshot.data as bool;
+                      return Text(status?'Server connected':'Server failed');
                     }else {
                       return Center(
                         child: Column(
